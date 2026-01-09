@@ -4,12 +4,8 @@
   <p><strong>Advanced Synchronization Client for Google Drive on Linux</strong></p>
 </div>
 
-<div align="center">
-  <button onclick="showContent('es')">🇪🇸 Español</button>
-  <button onclick="showContent('en')">🇬🇧 English</button>
-</div>
-
-<div id="es" style="display: block;">
+<details>
+<summary><strong>🇪🇸 Español</strong></summary>
 
 # 🚀 lX Drive
 
@@ -75,9 +71,10 @@ pip install watchdog  # Crítico para la detección en tiempo real
 
 ---
 
-</div>
+</details>
 
-<div id="en" style="display: none;">
+<details>
+<summary><strong>🇬🇧 English</strong></summary>
 
 # 🚀 lX Drive
 
@@ -100,11 +97,47 @@ An open-source, powerful, and modern alternative to proprietary solutions like I
 
 ---
 
-</div>
+## 🖼️ Feature Gallery
 
-<script>
-function showContent(lang) {
-  document.getElementById('es').style.display = lang === 'es' ? 'block' : 'none';
-  document.getElementById('en').style.display = lang === 'en' ? 'block' : 'none';
-}
-</script>
+### Account Configuration
+![New Account Configuration](img/Configuracion%20de%20nueva%20cuenta%20Gui.png)
+
+### Activity View
+![Activity Panel](img/vista%20de%20panel%20de%20registro%20de%20evento%20de%20carpetas%20y%20%20de%20dsco%20vfs.png)
+
+### Simultaneous Synchronization
+![Multiple Account Sync](img/vista%20de%20configuracion%20de%202%20cuentas%20simultaneas%20de%20google%20drive.png)
+
+---
+
+## 📦 Installation (Development)
+
+Currently under active development. It is recommended to run from the source code.
+
+### 1. Prerequisites
+
+You need to have **rclone** installed on your system:
+
+```bash
+curl https://rclone.org/install.sh | sudo bash
+```
+
+### 2. Clone and Prepare
+
+```bash
+# Clone repository
+git clone https://github.com/jhonyesg/GoogleDriveSyncLinuxgui.git
+cd GoogleDriveSyncLinuxgui
+
+# Create virtual environment (Recommended)
+python3 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+pip install watchdog  # Critical for real-time detection
+```
+
+---
+
+</details>

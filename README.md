@@ -96,8 +96,12 @@ pip install watchdog  # Crítico para la detección en tiempo real
 
 Este proyecto está bajo una licencia Open Source. Está permitido su uso general, pero **no está autorizado para reventa**. 
 
-**Autor:** Jhon Efraín Suárez  
-**Correo:** [jhonyesg@gmail.com](mailto:jhonyesg@gmail.com)
+**Autor:** Jhon Efraín Suárez Gómez  
+**Cargo:** CEO & Lead Systems Engineer  
+**Correo:** [jsuarez@mediaclouding.com](mailto:jsuarez@mediaclouding.com)  
+**Sitio Web:** [https://mediaserver.com.co](https://mediaserver.com.co)  
+**LinkedIn:** [https://mediaclouding.com](https://mediaclouding.com)  
+**Upwork:** [Perfil en Upwork](https://www.upwork.com)
 
 ---
 

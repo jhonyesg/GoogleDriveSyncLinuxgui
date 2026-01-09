@@ -79,7 +79,12 @@ pip install watchdog  # Crítico para la detección en tiempo real
    ```
 
 2. **Configurar una Cuenta**:
-   ![Ejemplo de configuración](img/ejemplo%20de%20adicion%20de%20cuentas%20google%20drive.png)
+
+   Para configurar una cuenta, sigue los pasos indicados en la imagen a continuación:
+
+   <div align="center">
+      <img src="img/ejemplo%20de%20adicion%20de%20cuentas%20google%20drive.png" alt="Ejemplo de configuración" width="600"/>
+   </div>
 
 3. **Sincronizar Archivos**:
    ![Sincronización activa](img/vista%20de%20unidad%20montada%20de%20cuenta%20pyme%20y%20gratuita%20de%20google%20drive%20en%20linux.png)

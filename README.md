@@ -75,8 +75,8 @@ curl https://rclone.org/install.sh | sudo bash
 
 ```bash
 # Clonar repositorio
-git clone <url-repo>
-cd lX_Drive
+git clone https://github.com/jhonyesg/GoogleDriveSyncLinuxgui.git
+cd GoogleDriveSyncLinuxgui
 
 # Crear entorno virtual (Recomendado)
 python3 -m venv venv

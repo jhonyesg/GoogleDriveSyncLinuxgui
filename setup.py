@@ -21,7 +21,7 @@ setup(
     description="Cliente de sincronización multi-cuenta para Google Drive en Linux",
     long_description=readme,
     long_description_content_type="text/markdown",
-    url="https://github.com/tuusuario/lx-drive",
+    url="https://github.com/jhonyesg/GoogleDriveSyncLinuxgui",
     license="MIT",
     
     packages=find_packages(),
@@ -58,7 +58,7 @@ setup(
     keywords="google-drive cloud sync rclone backup linux deepin",
     
     project_urls={
-        "Bug Reports": "https://github.com/tuusuario/lx-drive/issues",
-        "Source": "https://github.com/tuusuario/lx-drive",
+        "Bug Reports": "https://github.com/jhonyesg/GoogleDriveSyncLinuxgui/issues",
+        "Source": "https://github.com/jhonyesg/GoogleDriveSyncLinuxgui",
     },
 )

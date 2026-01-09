@@ -5,8 +5,8 @@
 </div>
 
 <div align="center">
-  <button onclick="document.getElementById('es').style.display='block';document.getElementById('en').style.display='none';">🇪🇸 Español</button>
-  <button onclick="document.getElementById('en').style.display='block';document.getElementById('es').style.display='none';">🇬🇧 English</button>
+  <button onclick="showContent('es')">🇪🇸 Español</button>
+  <button onclick="showContent('en')">🇬🇧 English</button>
 </div>
 
 <div id="es" style="display: block;">
@@ -70,17 +70,11 @@ An open-source, powerful, and modern alternative to proprietary solutions like I
 
 ---
 
-## 🖼️ Feature Gallery
-
-### Account Configuration
-![New Account Configuration](img/Configuracion%20de%20nueva%20cuenta%20Gui.png)
-
-### Activity View
-![Activity Panel](img/vista%20de%20panel%20de%20registro%20de%20evento%20de%20carpetas%20y%20%20de%20dsco%20vfs.png)
-
-### Simultaneous Synchronization
-![Multiple Account Sync](img/vista%20de%20configuracion%20de%202%20cuentas%20simultaneas%20de%20google%20drive.png)
-
----
-
 </div>
+
+<script>
+function showContent(lang) {
+  document.getElementById('es').style.display = lang === 'es' ? 'block' : 'none';
+  document.getElementById('en').style.display = lang === 'en' ? 'block' : 'none';
+}
+</script>

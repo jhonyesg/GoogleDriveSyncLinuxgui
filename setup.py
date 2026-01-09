@@ -26,6 +26,11 @@ setup(
     
     packages=find_packages(),
     include_package_data=True,
+
+    data_files=[
+        ('/usr/share/applications/', ['lxdrive.desktop']),
+        ('/usr/share/icons/', ['lxdrive.png']),
+    ],
     
     python_requires=">=3.10",
     install_requires=requirements,

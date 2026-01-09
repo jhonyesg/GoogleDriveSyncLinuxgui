@@ -89,10 +89,49 @@ pip install watchdog  # Crítico para la detección en tiempo real
 
 ---
 
-## 🚀 Ejemplo de Uso
+## 📦 Instalación (Paquete .deb)
+
+Para una instalación rápida y sencilla, hemos creado un paquete .deb que incluye todas las dependencias necesarias.
+
+### Instalación del Paquete .deb
+
+1. **Descargar el paquete**:
+   ```bash
+   # El paquete .deb está disponible en el directorio deb_dist/
+   ls deb_dist/
+   ```
+
+2. **Instalar el paquete**:
+   ```bash
+   sudo dpkg -i deb_dist/python3-lxdrive_1.0.0-1_all.deb
+   sudo apt --fix-broken install  # Si hay dependencias faltantes
+   ```
+
+3. **Verificar la instalación**:
+   ```bash
+   lxdrive --help
+   ```
+
+### Ventajas del Paquete .deb
+
+- ✅ Instalación global del sistema
+- ✅ Comandos disponibles: `lxdrive`, `lxdrive-gui`
+- ✅ Aparece en el menú de aplicaciones con icono
+- ✅ Actualizaciones automáticas vía apt (futuro)
+- ✅ Todas las dependencias incluidas
+
+**Nota**: El paquete .deb está listo para instalar y usar inmediatamente.
+
+---
+
+## � Ejemplo de Uso
 
 1. **Iniciar la Aplicación**:
    ```bash
+   # Si instalaste el paquete .deb:
+   lxdrive
+
+   # O desde el código fuente:
    python3 -m lxdrive
    ```
 

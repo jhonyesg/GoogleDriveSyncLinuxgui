@@ -94,7 +94,10 @@ pip install watchdog  # Crítico para la detección en tiempo real
 
 ## 📄 Licencia
 
-Este proyecto está bajo la Licencia MIT. Consulta el archivo LICENSE para más detalles.
+Este proyecto está bajo una licencia Open Source. Está permitido su uso general, pero **no está autorizado para reventa**. 
+
+**Autor:** Jhon Efraín Suárez  
+**Correo:** [jhonyesg@gmail.com](mailto:jhonyesg@gmail.com)
 
 ---
 

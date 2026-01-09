@@ -4,8 +4,12 @@
   <p><strong>Advanced Synchronization Client for Google Drive on Linux</strong></p>
 </div>
 
-<details>
-<summary><strong>🇪🇸 Español</strong></summary>
+<div align="center">
+  <button onclick="document.getElementById('es').style.display='block';document.getElementById('en').style.display='none';">🇪🇸 Español</button>
+  <button onclick="document.getElementById('en').style.display='block';document.getElementById('es').style.display='none';">🇬🇧 English</button>
+</div>
+
+<div id="es" style="display: block;">
 
 # 🚀 lX Drive
 
@@ -41,40 +45,9 @@ Una alternativa *opensource* potente y moderna a soluciones privativas como Insy
 
 ---
 
-## 📦 Instalación (Desarrollo)
+</div>
 
-Actualmente en fase de desarrollo activo. Se recomienda ejecutar desde el código fuente.
-
-### 1. Requisitos Previos
-
-Necesitas tener **rclone** instalado en tu sistema:
-
-```bash
-curl https://rclone.org/install.sh | sudo bash
-```
-
-### 2. Clonar y Preparar
-
-```bash
-# Clonar repositorio
-git clone https://github.com/jhonyesg/GoogleDriveSyncLinuxgui.git
-cd GoogleDriveSyncLinuxgui
-
-# Crear entorno virtual (Recomendado)
-python3 -m venv venv
-source venv/bin/activate
-
-# Instalar dependencias
-pip install -r requirements.txt
-pip install watchdog  # Crítico para la detección en tiempo real
-```
-
----
-
-</details>
-
-<details>
-<summary><strong>🇬🇧 English</strong></summary>
+<div id="en" style="display: none;">
 
 # 🚀 lX Drive
 
@@ -110,34 +83,4 @@ An open-source, powerful, and modern alternative to proprietary solutions like I
 
 ---
 
-## 📦 Installation (Development)
-
-Currently under active development. It is recommended to run from the source code.
-
-### 1. Prerequisites
-
-You need to have **rclone** installed on your system:
-
-```bash
-curl https://rclone.org/install.sh | sudo bash
-```
-
-### 2. Clone and Prepare
-
-```bash
-# Clone repository
-git clone https://github.com/jhonyesg/GoogleDriveSyncLinuxgui.git
-cd GoogleDriveSyncLinuxgui
-
-# Create virtual environment (Recommended)
-python3 -m venv venv
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-pip install watchdog  # Critical for real-time detection
-```
-
----
-
-</details>
+</div>

@@ -30,6 +30,24 @@ Una alternativa *opensource* potente y moderna a soluciones privativas como Insy
 ### Sincronización Simultánea
 ![Sincronización de múltiples cuentas](img/vista%20de%20configuracion%20de%202%20cuentas%20simultaneas%20de%20google%20drive.png)
 
+### Confirmación de Navegador
+![Confirmación de apertura de navegador](img/confirmacion%20de%20apertura%20de%20navegador%20para%20logueo%20usando%20rclone.png)
+
+### Resultado del Logueo
+![Resultado del logueo](img/resultado%20de%20logueo%20de%20cuenta%20de%20google.png)
+
+### Configuración de Inicio Automático
+![Inicio automático](img/vista%20de%20activar%20inicio%20automatico%20de%20la%20aplicacion%20apenas%20se%20inicie%20el%20sistema.png)
+
+### Vista Completa de la Interfaz
+![Vista completa](img/Interfaz%20completa,%20vista%20cuenta,%20%20y%20actividades.png)
+
+### Configuración de Unidad y Sincronización Simultánea
+![Unidad y sincronización simultánea](img/seccion%20donde%20se%20ve%20que%20una%20cuenta%20se%20puede%20tener%20la%20unidad%20y%20tambien%20sincronizacion%20de%20carpeta%20de%20manera%20simultanea.png)
+
+### Opción de Configuración de Cuenta
+![Opción de configuración](img/Vista%20de%20la%20opcion%20de%20configuracion%20de%20cuenta%20vinculada.png)
+
 ---
 
 ## 🛠️ Tecnologías

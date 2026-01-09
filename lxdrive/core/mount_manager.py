@@ -92,11 +92,32 @@ class MountManager:
             return False, "Cuenta no encontrada"
         
         if self.is_mounted(account_id):
-            return True, "Ya está montada"
+            # Check for stale mount
+            try:
+                if not any(p.pid == self._mount_processes.get(account_id).pid for p in self._mount_processes.values() if p):
+                     logger.warning(f"Mount {account_id} seems stale, forcing unmount")
+                     subprocess.run(["fusermount", "-uz", str(self._get_mount_point(account))], stderr=subprocess.DEVNULL)
+            except:
+                pass
+            
+            if self.is_mounted(account_id):
+                 return True, "Ya está montada"
         
         mount_point = self._get_mount_point(account)
-        mount_point.mkdir(parents=True, exist_ok=True)
         
+        # Ensure clean state before touching the path (fixes Errno 107)
+        subprocess.run(["fusermount", "-uz", str(mount_point)], stderr=subprocess.DEVNULL)
+        
+        try:
+            mount_point.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            # If it still fails with 107, try lazy unmount
+            if e.errno == 107:
+                 subprocess.run(["umount", "-l", str(mount_point)], stderr=subprocess.DEVNULL)
+                 mount_point.mkdir(parents=True, exist_ok=True)
+            else:
+                 raise e
+
         # 1. Notificar inicio de montaje en la UI
         self._emit_activity(account_id, "Unidad Virtual", "mounted", "Montando raíz del Drive...")
 
@@ -135,7 +156,7 @@ class MountManager:
             
             # Esperar un momento a que FUSE se estabilice
             import time
-            time.sleep(1.5)
+            time.sleep(3.0) # Increased wait time for slower mounts
             
             if self.is_mounted(account_id):
                 account.mount_enabled = True
@@ -211,10 +232,22 @@ class MountManager:
                             
                         self._emit_activity(account_id, filename, action, filename)
                         
+        except OSError as e:
+            if e.errno == 107:
+                 logger.warning(f"Transport endpoint disconnected for {account_id}. Cleaning up.")
+                 self.unmount(account_id)
+            else:
+                 logger.error(f"Error IO en monitor: {e}")
         except Exception as e:
             logger.error(f"Error en hilo de monitorización: {e}")
         finally:
             logger.info(f"Monitor finalizado para {account_id}")
+            # Ensure process is cleaned up
+            if process.poll() is None:
+                try:
+                    process.terminate()
+                except:
+                    pass
 
     def _emit_activity(self, account_id, name, action, path):
         """Notifica la actividad a la UI"""
@@ -242,6 +275,11 @@ class MountManager:
             
             account.mount_enabled = False
             self.account_manager.update(account)
+            # Remove the empty directory to keep things clean
+            try:
+                mount_point.rmdir()
+            except:
+                pass
             return True, ""
         except Exception as e:
             # Si falla, intentar umount normal
@@ -250,12 +288,21 @@ class MountManager:
                              check=True, capture_output=True)
                 account.mount_enabled = False
                 self.account_manager.update(account)
+                try:
+                    mount_point.rmdir()
+                except:
+                    pass
                 return True, ""
             except Exception as e2:
                 # Si rclone ya no está o el punto no está, forzamos el estado a desconectado
                 if not self.is_mounted(account_id):
                     account.mount_enabled = False
                     self.account_manager.update(account)
+                    try:
+                        if mount_point.exists():
+                             mount_point.rmdir()
+                    except:
+                        pass
                     return True, "Ya estaba desmontado"
                 return False, f"Error al desmontar: {e2}"
     
@@ -276,10 +323,21 @@ class MountManager:
         mount_point = self._get_mount_point(account)
         
         # Verificar si el punto de montaje está en /proc/mounts
+        # Nota: /proc/mounts escapa espacios como \040, por lo que verificamos decodificando
         try:
             with open("/proc/mounts", "r") as f:
-                mounts = f.read()
-                return str(mount_point) in mounts
+                for line in f:
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        # Decodificar caracteres escapados (ej: \040 -> espacio)
+                        mount_path = parts[1].encode('utf-8').decode('unicode_escape')
+                        # También probar replace manual por si acaso
+                        mount_path_alt = parts[1].replace("\\040", " ").replace("\\011", "\t")
+                        
+                        target_path = str(mount_point)
+                        if mount_path == target_path or mount_path_alt == target_path:
+                            return True
+            return False
         except IOError:
             return account_id in self._mount_processes
     
@@ -366,6 +424,15 @@ class MountManager:
         
         try:
             # Intentar con xdg-open (estándar en Linux)
+            # Primero verificar si el punto de montaje es accesible
+            try:
+                if not mount_point.exists(): # Esto lanzará OSError 107 si está desconectado
+                     return False
+            except OSError:
+                 logger.error(f"Mount point defectuoso detectado: {mount_point}")
+                 subprocess.run(["fusermount", "-uz", str(mount_point)], stderr=subprocess.DEVNULL)
+                 return False
+
             subprocess.Popen(
                 ["xdg-open", str(mount_point)],
                 stdout=subprocess.DEVNULL,

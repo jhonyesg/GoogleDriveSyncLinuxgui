@@ -50,99 +50,6 @@ class SyncTask:
     files_transferred: int = 0
     bytes_transferred: int = 0
 
-    def _sync_account(self, account: Account):
-        """
-        Sincroniza una cuenta específica.
-        """
-        with self._lock:
-            if account.id in self._active_syncs:
-                # Si ya está activa, marcamos como PENDIENTE para que se ejecute al terminar la actual
-                logger.info(f"Sincronización en curso para {account.name}. Encolando nueva solicitud...")
-                self._pending_syncs.add(account.id)
-                return
-            self._active_syncs.add(account.id)
-            # Limpiamos pendiente porque ya la estamos atendiendo
-            self._pending_syncs.discard(account.id)
-        
-        task = SyncTask(
-            account_id=account.id,
-            source="",
-            dest="",
-            direction=account.sync_direction,
-            started_at=datetime.now()
-        )
-        
-        try:
-            # ... (código existente de sync)
-            logger.info(f"Iniciando sincronización: {account.name}")
-            
-            if self._on_sync_start:
-                self._on_sync_start(account.id)
-            
-            all_success = True
-            error_messages = []
-
-            for pair in account.sync_pairs:
-                if not pair.enabled: continue
-                # Limpieza preventiva interna por si acaso
-                # ...
-                pair_success, pair_message = self._sync_single_pair(account, pair)
-                if not pair_success:
-                    all_success = False
-                    error_messages.append(f"{Path(pair.local_path).name}: {pair_message}")
-
-            task.success = all_success
-            task.completed_at = datetime.now()
-            task.message = "\n".join(error_messages) if error_messages else "Sincronización completada"
-            
-            self._last_sync_times[account.id] = datetime.now()
-            self.account_manager.set_status(account.id, SyncStatus.IDLE if all_success else SyncStatus.ERROR)
-
-            if not all_success and self._on_sync_error: self._on_sync_error(account.id, task.message)
-            if self._on_sync_complete: self._on_sync_complete(task)
-                
-        except Exception as e:
-            error_msg = str(e)
-            logger.error(f"Excepción en sincronización: {error_msg}")
-            self.account_manager.set_status(account.id, SyncStatus.ERROR, error_msg)
-            task.success = False
-            task.message = error_msg
-            if self._on_sync_error: self._on_sync_error(account.id, error_msg)
-                
-        finally:
-            restart = False
-            with self._lock:
-                self._active_syncs.discard(account.id)
-                # Verificar si quedó algo pendiente
-                if account.id in self._pending_syncs:
-                    restart = True
-                    # No quitamos de pending aquí, lo hará la nueva ejecución al entrar
-            
-            if restart:
-                logger.info(f"Procesando sincronización pendiente para {account.name}...")
-                threading.Thread(target=self._sync_account, args=(account,)).start()
-    
-    def sync_now(self, account_id: str) -> bool:
-        """Sincroniza toda la cuenta (todos sus pares) inmediatamente"""
-        # Ya no bloqueamos aquí, dejamos que _sync_account gestione la cola
-        account = self.account_manager.get_by_id(account_id)
-        if not account: return False
-        
-        thread = threading.Thread(target=self._sync_account, args=(account,))
-        thread.start()
-        return True
-    """Representa una tarea de sincronización"""
-    account_id: str
-    source: str
-    dest: str
-    direction: SyncDirection
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    success: bool = False
-    message: str = ""
-    files_transferred: int = 0
-    bytes_transferred: int = 0
-
 
 class SyncManager:
     """
@@ -459,6 +366,25 @@ class SyncManager:
             
             if self._on_file_activity:
                 self._on_file_activity(account.id, Path(local_path).name, "sync_start", "Sincronización iniciada")
+            
+            # --- PRE-LIMPIEZA PROACTIVA ---
+            # Si hay un lock file huérfano de una sesión anterior fallida, rclone fallará inmediatamente.
+            # Intentamos detectarlo antes de empezar.
+            try:
+                bisync_cache = Path.home() / ".cache" / "rclone" / "bisync"
+                if bisync_cache.exists():
+                    # Buscamos archivos .lck que parezcan de este par
+                    # Rclone nombra: path1..path2.lck donde pathX tiene / y : reemplazados
+                    # Hacemos una búsqueda laxa para limpiar basura obvia
+                    for f in bisync_cache.glob("*.lck"):
+                        # Si el archivo tiene más de 5 minutos, asumimos que es zombie (rclone bisync no suele tardar tanto en lock sin actividad)
+                        try:
+                            mtime = f.stat().st_mtime
+                            if time.time() - mtime > 300: # 5 minutos
+                                logger.warning(f"Limpiando lock file antiguo/zombie: {f.name}")
+                                f.unlink()
+                        except: pass
+            except: pass
 
             logger.info(f"Lanzando bisync (resync={resync_mode}) para {account.name} - {Path(local_path).name}")
             
@@ -599,14 +525,23 @@ class SyncManager:
                 logger.warning(f"Bloqueo detectado para {account.name}. Intentando desbloqueo...")
                 
                 try:
-                    # Limpieza quirúrgica de locks
-                    cache_path = Path.home() / ".cache" / "rclone" / "bisync"
-                    if cache_path.exists():
-                        safe_local = "".join(c if c.isalnum() else "_" for c in local_path)
-                        for f in cache_path.glob("*.lck"):
-                            if safe_local in f.name or "lxdrive" in f.name:
-                                logger.info(f"Desbloqueando sesión: {f.name}")
-                                f.unlink()
+                    # Estrategia 1: Usar la ruta exacta si el mensaje de error nos la dio
+                    lock_path_extracted = None
+                    if "prior lock file found: " in message:
+                        lock_path_extracted = message.split("prior lock file found: ")[-1].strip()
+                        
+                    if lock_path_extracted and Path(lock_path_extracted).exists():
+                         logger.info(f"Eliminando LOCK específico reportado: {lock_path_extracted}")
+                         Path(lock_path_extracted).unlink()
+                    else:
+                        # Estrategia 2: Búsqueda heurística (Fallback)
+                        cache_path = Path.home() / ".cache" / "rclone" / "bisync"
+                        if cache_path.exists():
+                            safe_local = "".join(c if c.isalnum() else "_" for c in local_path)
+                            for f in cache_path.glob("*.lck"):
+                                if safe_local in f.name or "lxdrive" in f.name:
+                                    logger.info(f"Desbloqueando sesión (heurística): {f.name}")
+                                    f.unlink()
                 except FileNotFoundError:
                     pass # Ya se borró, mejor
                 except Exception as e:
@@ -614,6 +549,7 @@ class SyncManager:
 
                 # Intento 2: Reintentar NORMAL tras desbloqueo
                 logger.info("Reintentando sincronización tras desbloqueo...")
+                time.sleep(1) # Dar un respiro al filesystem
                 success, message = run_bisync(False)
 
             # Si sigue fallando (o no era lock), vamos a resync

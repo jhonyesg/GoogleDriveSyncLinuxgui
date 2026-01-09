@@ -542,7 +542,23 @@ class RcloneWrapper:
         if resync:
             args.extend(["--resync", "--ignore-listing-checksum"])
             
-        return self._run_command_stream(args)
+        # Custom wrapper to catch and clean lock files
+        for line in self._run_command_stream(args):
+            # Check for lock file error in the stream
+            if "prior lock file found" in line:
+                logger.warning(f"Lock file detected in stream: {line.strip()}")
+                try:
+                    # Extract path from error (usually ends with .lck)
+                    # Format: NOTICE: Failed to bisync: prior lock file found: /path/to/file.lck
+                    if ": " in line:
+                        lock_path = line.split(": ")[-1].strip()
+                        if lock_path.endswith(".lck") and Path(lock_path).exists():
+                            logger.info(f"Removing stale lock file: {lock_path}")
+                            Path(lock_path).unlink()
+                except Exception as e:
+                    logger.error(f"Failed to remove lock file: {e}")
+            
+            yield line
 
 
 

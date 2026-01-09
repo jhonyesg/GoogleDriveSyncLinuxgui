@@ -23,8 +23,9 @@ from datetime import datetime
 from loguru import logger
 
 from ..core import RcloneWrapper, AccountManager, SyncManager, MountManager
-from ..core.account_manager import Account, SyncStatus, SyncDirection
+from ..core.account_manager import Account, SyncStatus, SyncDirection, SyncPair
 from ..core.rclone_wrapper import RemoteType
+from ..utils.autostart import is_autostart_enabled, set_autostart
 
 
 class AccountWidget(QFrame):
@@ -33,7 +34,9 @@ class AccountWidget(QFrame):
     clicked = pyqtSignal(str)  # Emite account_id
     sync_requested = pyqtSignal(str)
     mount_requested = pyqtSignal(str)
+    mount_requested = pyqtSignal(str)
     settings_requested = pyqtSignal(str)
+    persistence_changed = pyqtSignal(str) # New signal for checkbox
     delete_requested = pyqtSignal(str)
     
     def __init__(self, account: Account, parent=None):
@@ -87,6 +90,15 @@ class AccountWidget(QFrame):
         self.status_label.setStyleSheet(f"color: {self._get_status_color()}; font-size: 11px;")
         info_layout.addWidget(self.status_label)
         
+        info_layout.addWidget(self.status_label)
+        
+        # Checkbox "Auto-mount"
+        self.auto_mount_check = QCheckBox("Automontar al inicio")
+        self.auto_mount_check.setChecked(self.account.mount_enabled)
+        self.auto_mount_check.setToolTip("Si está marcado, se montará automáticamente al abrir la aplicación")
+        self.auto_mount_check.stateChanged.connect(self._on_auto_mount_toggled)
+        info_layout.addWidget(self.auto_mount_check)
+        
         layout.addLayout(info_layout, 1)
         
         # Botones de acción
@@ -138,8 +150,19 @@ class AccountWidget(QFrame):
             QPushButton:hover {
                 background-color: #4285f4;
             }
+
+            QCheckBox {
+                color: #aaa;
+                font-size: 11px;
+                background: transparent;
+                border: none;
+            }
         """)
-    
+
+    def _on_auto_mount_toggled(self, state):
+        self.account.mount_enabled = (state == 2)
+        self.persistence_changed.emit(self.account.id)
+
     def _get_service_icon(self) -> str:
         """Obtiene el icono según el tipo de servicio"""
         icons = {
@@ -321,7 +344,17 @@ class AddSyncPairDialog(QDialog):
         self.account = account
         self.setWindowTitle(f"Añadir Carpeta - {account.name}")
         self.setMinimumWidth(450)
-        self.setStyleSheet("background-color: #1e1e1e; color: white;")
+        self.setStyleSheet("""
+            QDialog { background-color: #1e1e1e; color: white; }
+            QLineEdit { background-color: #2d2d2d; color: white; border: 1px solid #3d3d3d; padding: 5px; border-radius: 4px; }
+            QPushButton { background-color: #3d3d3d; color: white; padding: 5px; border-radius: 4px; border: none; }
+            QPushButton:hover { background-color: #4d4d4d; }
+            /* File Dialog Styles */
+            QFileDialog { background-color: #1e1e1e; }
+            QTreeView, QListView { background-color: #2d2d2d; color: white; border: 1px solid #3d3d3d; }
+            QTreeView::item:selected, QListView::item:selected { background-color: #4285f4; }
+            QTreeView::item:hover, QListView::item:hover { background-color: #3d3d3d; }
+        """)
         
         layout = QVBoxLayout(self)
         
@@ -380,7 +413,11 @@ class AddSyncPairDialog(QDialog):
         self.accept()
 
     def _browse_local(self):
-        path = QFileDialog.getExistingDirectory(self, "Seleccionar Carpeta Local")
+        path = QFileDialog.getExistingDirectory(
+            self, 
+            "Seleccionar Carpeta Local",
+            options=QFileDialog.Option.DontUseNativeDialog
+        )
         if path:
             self.local_edit.setText(path)
 
@@ -391,6 +428,59 @@ class AddSyncPairDialog(QDialog):
 
     def get_data(self):
         return self.local_edit.text(), self.remote_edit.text()
+
+
+class GlobalSettingsDialog(QDialog):
+    """Diálogo para configuración global de la aplicación"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Configuración Global")
+        self.setMinimumWidth(400)
+        self.setStyleSheet("""
+            QDialog { background-color: #1e1e1e; color: white; }
+            QCheckBox { color: white; font-size: 14px; padding: 5px; }
+            QLabel { color: #ccc; font-size: 12px; margin-bottom: 10px; }
+            QPushButton { 
+                background-color: #4285f4; color: white; border: none; 
+                padding: 8px 20px; border-radius: 5px; font-weight: bold;
+            }
+            QPushButton:hover { background-color: #5a9cf5; }
+        """)
+        
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(20)
+        
+        # Título
+        title = QLabel("Preferencias de Sistema")
+        title.setStyleSheet("font-size: 18px; font-weight: bold; color: white; margin-bottom: 20px;")
+        layout.addWidget(title)
+        
+        # Opción: Autostart
+        self.autostart_check = QCheckBox("Iniciar lX Drive con el sistema")
+        self.autostart_check.setChecked(is_autostart_enabled())
+        self.autostart_check.setToolTip("Crea una entrada en ~/.config/autostart para iniciar automáticamente")
+        layout.addWidget(self.autostart_check)
+        
+        desc = QLabel("Si se activa, la aplicación se iniciará minimizada en la bandeja del sistema al arrancar tu sesión.")
+        desc.setWordWrap(True)
+        layout.addWidget(desc)
+        
+        layout.addStretch()
+        
+        # Botón cerrar
+        close_btn = QPushButton("Guardar y Cerrar")
+        close_btn.clicked.connect(self._save_and_close)
+        layout.addWidget(close_btn, 0, Qt.AlignmentFlag.AlignRight)
+
+    def _save_and_close(self):
+        # Guardar configuración de autostart
+        try:
+            set_autostart(self.autostart_check.isChecked())
+            self.accept()
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"No se pudo guardar la configuración: {e}")
 
 
 class AddAccountDialog(QDialog):
@@ -493,6 +583,29 @@ class AddAccountDialog(QDialog):
                 padding: 10px;
                 min-width: 40px;
             }
+            
+            /* Estilos para QFileDialog y sus vistas */
+            QFileDialog {
+                background-color: #1e1e1e;
+            }
+            QFileDialog QListView, QFileDialog QTreeView {
+                background-color: #2d2d2d;
+                color: #ffffff;
+                border: 1px solid #3d3d3d;
+                outline: none;
+            }
+            QFileDialog QListView::item:hover, QFileDialog QTreeView::item:hover {
+                background-color: #3d3d3d;
+            }
+            QFileDialog QListView::item:selected, QFileDialog QTreeView::item:selected {
+                background-color: #4285f4;
+                color: white;
+            }
+            QFileDialog QLineEdit {
+                background-color: #2d2d2d;
+                color: white;
+                border: 1px solid #3d3d3d;
+            }
         """)
         
         main_layout = QVBoxLayout(self)
@@ -550,8 +663,15 @@ class AddAccountDialog(QDialog):
         mount_path_label.setStyleSheet("color: #aaa;")
         self.mount_path_input = QLineEdit()
         self.mount_path_input.setPlaceholderText("~/CloudDrives/MiCuenta")
+
+        self.mount_browse_btn = QPushButton("📂")
+        self.mount_browse_btn.setObjectName("browseBtn")
+        self.mount_browse_btn.setFixedWidth(45)
+        self.mount_browse_btn.clicked.connect(self._browse_mount_path)
+
         mount_path_layout.addWidget(mount_path_label)
         mount_path_layout.addWidget(self.mount_path_input)
+        mount_path_layout.addWidget(self.mount_browse_btn)
         mode_layout.addLayout(mount_path_layout)
         
         # Separador visual
@@ -597,32 +717,32 @@ class AddAccountDialog(QDialog):
         remote_folder_layout.addWidget(self.remote_folder_input)
         mode_layout.addLayout(remote_folder_layout)
         
-        layout.addWidget(mode_group)
-        
+        main_layout.addWidget(mode_group)
+
         # Espaciador
-        layout.addStretch()
-        
+        main_layout.addStretch()
+
         # Nota informativa
         note = QLabel("ℹ️ Se abrirá el navegador para autorizar el acceso a tu cuenta")
         note.setStyleSheet("color: #888; font-size: 11px;")
         note.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(note)
-        
+        main_layout.addWidget(note)
+
         # Botones
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(15)
-        
+
         cancel_btn = QPushButton("Cancelar")
         cancel_btn.setObjectName("secondaryBtn")
         cancel_btn.clicked.connect(self.reject)
         btn_layout.addWidget(cancel_btn)
-        
+
         add_btn = QPushButton("✓ Añadir Cuenta")
         add_btn.setObjectName("primaryBtn")
         add_btn.clicked.connect(self._add_account)
         btn_layout.addWidget(add_btn)
-        
-        layout.addLayout(btn_layout)
+
+        main_layout.addLayout(btn_layout)
     
     def _on_sync_toggled(self, state):
         """Activa/desactiva los campos de sincronización"""
@@ -637,10 +757,21 @@ class AddAccountDialog(QDialog):
             self,
             "Seleccionar carpeta de sincronización",
             str(Path.home()),
-            QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks
+            QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks | QFileDialog.Option.DontUseNativeDialog
         )
         if folder:
             self.folder_input.setText(folder)
+
+    def _browse_mount_path(self):
+        """Abre diálogo para seleccionar carpeta de montaje"""
+        folder = QFileDialog.getExistingDirectory(
+            self,
+            "Seleccionar carpeta para montar la unidad",
+            str(Path.home()),
+            QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks | QFileDialog.Option.DontUseNativeDialog
+        )
+        if folder:
+            self.mount_path_input.setText(folder)
     
     def _show_styled_message(self, msg_type: str, title: str, text: str):
         """Muestra un mensaje con estilos oscuros"""
@@ -742,17 +873,26 @@ class AddAccountDialog(QDialog):
         import uuid
         account_id = str(uuid.uuid4())[:8]
         
+        # Prepare sync pairs
+        sync_pairs = []
+        if sync_enabled:
+            pair_id = str(uuid.uuid4())[:8]
+            sync_pairs.append(SyncPair(
+                id=pair_id,
+                local_path=local_folder or str(Path.home() / name.replace(" ", "_")),
+                remote_path=remote_folder or "",
+                direction=SyncDirection.BIDIRECTIONAL,
+                enabled=True
+            ))
+
         self.new_account = Account(
             id=account_id,
             name=name,
             remote_name=remote_name,
             remote_type=remote_type_str,
-            local_path=local_folder or str(Path.home() / name.replace(" ", "_")),
-            remote_path=remote_folder,
-            sync_enabled=sync_enabled,
+            sync_pairs=sync_pairs,
             mount_enabled=mount_enabled,
-            mount_point=mount_point,
-            sync_direction=SyncDirection.BIDIRECTIONAL
+            mount_point=mount_point
         )
         
         self.accept()
@@ -1319,7 +1459,30 @@ class MainWindow(QMainWindow):
         sync_all_btn.clicked.connect(self._sync_all)
         layout.addWidget(sync_all_btn)
         
+
+        settings_btn = QPushButton("⚙ Ajustes")
+        settings_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #3d3d3d;
+                color: white;
+                padding: 12px 15px;
+                border: none;
+                border-radius: 8px;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background-color: #4d4d4d;
+            }
+        """)
+        settings_btn.clicked.connect(self._open_global_settings)
+        layout.addWidget(settings_btn)
+        
         return header
+
+    def _open_global_settings(self):
+        """Abre el diálogo de configuración global"""
+        dialog = GlobalSettingsDialog(self)
+        dialog.exec()
     
     def _setup_callbacks(self):
         """Configura los callbacks del sync manager"""

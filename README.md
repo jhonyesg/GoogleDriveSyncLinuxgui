@@ -1,3 +1,12 @@
+<div align="center">
+  <h1>🚀 lX Drive</h1>
+  <p><strong>Cliente de Sincronización Avanzado para Google Drive en Linux</strong></p>
+  <p><strong>Advanced Synchronization Client for Google Drive on Linux</strong></p>
+</div>
+
+<details>
+<summary><strong>🇪🇸 Español</strong></summary>
+
 # 🚀 lX Drive
 
 **Cliente de Sincronización Avanzado para Google Drive en Linux**
@@ -29,33 +38,6 @@ Una alternativa *opensource* potente y moderna a soluciones privativas como Insy
 
 ### Sincronización Simultánea
 ![Sincronización de múltiples cuentas](img/vista%20de%20configuracion%20de%202%20cuentas%20simultaneas%20de%20google%20drive.png)
-
-### Confirmación de Navegador
-![Confirmación de apertura de navegador](img/confirmacion%20de%20apertura%20de%20navegador%20para%20logueo%20usando%20rclone.png)
-
-### Resultado del Logueo
-![Resultado del logueo](img/resultado%20de%20logueo%20de%20cuenta%20de%20google.png)
-
-### Configuración de Inicio Automático
-![Inicio automático](img/vista%20de%20activar%20inicio%20automatico%20de%20la%20aplicacion%20apenas%20se%20inicie%20el%20sistema.png)
-
-### Vista Completa de la Interfaz
-![Vista completa](img/Interfaz%20completa,%20vista%20cuenta,%20%20y%20actividades.png)
-
-### Configuración de Unidad y Sincronización Simultánea
-![Unidad y sincronización simultánea](img/seccion%20donde%20se%20ve%20que%20una%20cuenta%20se%20puede%20tener%20la%20unidad%20y%20tambien%20sincronizacion%20de%20carpeta%20de%20manera%20simultanea.png)
-
-### Opción de Configuración de Cuenta
-![Opción de configuración](img/Vista%20de%20la%20opcion%20de%20configuracion%20de%20cuenta%20vinculada.png)
-
----
-
-## 🛠️ Tecnologías
-
-- **Backend**: `rclone` (v1.72+) - El motor más robusto del mercado.
-- **Core**: Python 3 + `watchdog` (Monitorización de FS).
-- **GUI**: PyQt6 - Interfaz moderna, oscura y responsiva.
-- **Persistencia**: JSON - Configuración portátil.
 
 ---
 
@@ -89,46 +71,10 @@ pip install watchdog  # Crítico para la detección en tiempo real
 
 ---
 
-## 🚀 Ejemplo de Uso
+</details>
 
-1. **Iniciar la Aplicación**:
-   ```bash
-   python3 -m lxdrive
-   ```
-
-2. **Configurar una Cuenta**:
-
-   Para configurar una cuenta, sigue los pasos indicados en la imagen a continuación:
-
-   <div align="center">
-      <img src="img/ejemplo%20de%20adicion%20de%20cuentas%20google%20drive.png" alt="Ejemplo de configuración" width="600"/>
-   </div>
-
-3. **Sincronizar Archivos**:
-   ![Sincronización activa](img/vista%20de%20unidad%20montada%20de%20cuenta%20pyme%20y%20gratuita%20de%20google%20drive%20en%20linux.png)
-
----
-
-## 🤝 Contribuciones
-
-¡Las contribuciones son bienvenidas! Por favor, abre un issue o envía un pull request para mejorar el proyecto.
-
----
-
-## 📄 Licencia
-
-Este proyecto está bajo una licencia Open Source. Está permitido su uso general, pero **no está autorizado para reventa**. 
-
-**Autor:** Jhon Efraín Suárez Gómez  
-**Cargo:** CEO & Lead Systems Engineer  
-**Correo:** [jsuarez@mediaclouding.com](mailto:jsuarez@mediaclouding.com)  
-**Sitio Web:** [https://mediaserver.com.co](https://mediaserver.com.co)  
-**LinkedIn:** [https://mediaclouding.com](https://mediaclouding.com)  
-**Upwork:** [Perfil en Upwork](https://www.upwork.com)
-
----
-
-**lX Drive** - *Tu nube, bajo tu control.* 🐧☁️
+<details>
+<summary><strong>🇬🇧 English</strong></summary>
 
 # 🚀 lX Drive
 
@@ -162,33 +108,6 @@ An open-source, powerful, and modern alternative to proprietary solutions like I
 ### Simultaneous Synchronization
 ![Multiple Account Sync](img/vista%20de%20configuracion%20de%202%20cuentas%20simultaneas%20de%20google%20drive.png)
 
-### Browser Confirmation
-![Browser Confirmation](img/confirmacion%20de%20apertura%20de%20navegador%20para%20logueo%20usando%20rclone.png)
-
-### Login Result
-![Login Result](img/resultado%20de%20logueo%20de%20cuenta%20de%20google.png)
-
-### Auto-Start Configuration
-![Auto-Start](img/vista%20de%20activar%20inicio%20automatico%20de%20la%20aplicacion%20apenas%20se%20inicie%20el%20sistema.png)
-
-### Full Interface View
-![Full Interface](img/Interfaz%20completa,%20vista%20cuenta,%20%20y%20actividades.png)
-
-### Unit and Simultaneous Sync Configuration
-![Unit and Sync](img/seccion%20donde%20se%20ve%20que%20una%20cuenta%20se%20puede%20tener%20la%20unidad%20y%20tambien%20sincronizacion%20de%20carpeta%20de%20manera%20simultanea.png)
-
-### Account Configuration Option
-![Account Configuration Option](img/Vista%20de%20la%20opcion%20de%20configuracion%20de%20cuenta%20vinculada.png)
-
----
-
-## 🛠️ Technologies
-
-- **Backend**: `rclone` (v1.72+) - The most robust engine on the market.
-- **Core**: Python 3 + `watchdog` (FS Monitoring).
-- **GUI**: PyQt6 - Modern, dark, and responsive interface.
-- **Persistence**: JSON - Portable configuration.
-
 ---
 
 ## 📦 Installation (Development)
@@ -221,43 +140,4 @@ pip install watchdog  # Critical for real-time detection
 
 ---
 
-## 🚀 Usage Example
-
-1. **Start the Application**:
-   ```bash
-   python3 -m lxdrive
-   ```
-
-2. **Configure an Account**:
-
-   To configure an account, follow the steps shown in the image below:
-
-   <div align="center">
-      <img src="img/ejemplo%20de%20adicion%20de%20cuentas%20google%20drive.png" alt="Configuration Example" width="600"/>
-   </div>
-
-3. **Synchronize Files**:
-   ![Active Synchronization](img/vista%20de%20unidad%20montada%20de%20cuenta%20pyme%20y%20gratuita%20de%20google%20drive%20en%20linux.png)
-
----
-
-## 🤝 Contributions
-
-Contributions are welcome! Please open an issue or submit a pull request to improve the project.
-
----
-
-## 📄 License
-
-This project is under an Open Source license. General use is allowed, but **resale is not authorized**. 
-
-**Author:** Jhon Efraín Suárez Gómez  
-**Position:** CEO & Lead Systems Engineer  
-**Email:** [jsuarez@mediaclouding.com](mailto:jsuarez@mediaclouding.com)  
-**Website:** [https://mediaserver.com.co](https://mediaserver.com.co)  
-**LinkedIn:** [https://mediaclouding.com](https://mediaclouding.com)  
-**Upwork:** [Upwork Profile](https://www.upwork.com)
-
----
-
-**lX Drive** - *Your cloud, under your control.* 🐧☁️
+</details>

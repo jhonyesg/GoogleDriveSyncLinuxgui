@@ -1,0 +1,28 @@
+Format: 1.8
+Date: Sun, 11 Jan 2026 10:38:41 -0500
+Source: lxdrive
+Architecture: source
+Version: 1.5.0-1
+Distribution: unstable
+Urgency: low
+Maintainer: None <None>
+Changed-By: None <None>
+Changes:
+ lxdrive (1.5.0-1) unstable; urgency=low
+ .
+   * source package automatically created by stdeb 0.10.0
+Checksums-Sha1:
+ 49eb3d0b1833860450d241abc03d00f5234f9ba2 871 lxdrive_1.5.0-1.dsc
+ e2b010576c392a2d35151108708a665832e5774c 133239 lxdrive_1.5.0.orig.tar.gz
+ d3a058c5838a7bf8aa83f9d84065d92b7e051846 1520 lxdrive_1.5.0-1.debian.tar.xz
+ dc928c2d11ce7156dfe897cbea0d0d2ca628ffc4 6599 lxdrive_1.5.0-1_source.buildinfo
+Checksums-Sha256:
+ 63a1f971e767601f2f70505f2663b9afe2f7c1710b3a924adc4e41f08b0bb206 871 lxdrive_1.5.0-1.dsc
+ 6f2eee21fbe98ec61cb31bc36ccef316586d14eee5db0fe0ac54a2bb34a98c39 133239 lxdrive_1.5.0.orig.tar.gz
+ d1a275f3c62393b212db8a0906803ff22276e3953dfcced6fddb1533e842b5e9 1520 lxdrive_1.5.0-1.debian.tar.xz
+ a552df8aed0e5d223e36ae96cd4fbafd3d0c28eb2d7da9315423ea75db7e1289 6599 lxdrive_1.5.0-1_source.buildinfo
+Files:
+ aa081be066d5c49830761accf717b292 871 python optional lxdrive_1.5.0-1.dsc
+ 89154de89cacda09526105463e331e1e 133239 python optional lxdrive_1.5.0.orig.tar.gz
+ 224fd4fc1bb40d0c0b7abb4f0d44eaa6 1520 python optional lxdrive_1.5.0-1.debian.tar.xz
+ 7a9ec5bf3309cca265727b5412f969a8 6599 python optional lxdrive_1.5.0-1_source.buildinfo

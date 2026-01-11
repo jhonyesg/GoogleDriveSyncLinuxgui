@@ -1,0 +1,25 @@
+Format: 1.8
+Date: Sun, 11 Jan 2026 10:38:41 -0500
+Source: lxdrive
+Binary: python3-lxdrive
+Architecture: all
+Version: 1.5.0-1
+Distribution: unstable
+Urgency: low
+Maintainer: None <None>
+Changed-By: None <None>
+Description:
+ python3-lxdrive - Cliente de sincronización multi-cuenta para Google Drive en
+Changes:
+ lxdrive (1.5.0-1) unstable; urgency=low
+ .
+   * source package automatically created by stdeb 0.10.0
+Checksums-Sha1:
+ d876127a68949dcca270e1de2f497bd6c191c6fb 6665 lxdrive_1.5.0-1_amd64.buildinfo
+ 640b6a8cff3221cc820dc270623153658fdb873b 115756 python3-lxdrive_1.5.0-1_all.deb
+Checksums-Sha256:
+ 8d2a9c653820856143ff4c21ff5e9d28fcc498022d23e3306034d39306ecf861 6665 lxdrive_1.5.0-1_amd64.buildinfo
+ f0a17f925e900c33f01486e204cd8a739cbb71dcaab75d9d4bfcc3108c2f49e0 115756 python3-lxdrive_1.5.0-1_all.deb
+Files:
+ 19a53031bbebfc377904378035cd8fe4 6665 python optional lxdrive_1.5.0-1_amd64.buildinfo
+ 16b8cf0a7564ad7e2b819d6669d22863 115756 python optional python3-lxdrive_1.5.0-1_all.deb

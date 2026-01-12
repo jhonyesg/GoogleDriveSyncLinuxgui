@@ -123,7 +123,8 @@ class TrayIcon(QSystemTrayIcon):
         menu.addSeparator()
         
         # Submenú de cuentas
-        self.accounts_menu = menu.addMenu("📂 Cuentas")
+        accounts_submenu = menu.addMenu("📂 Cuentas")
+        self.accounts_menu: Optional[QMenu] = accounts_submenu
         self._update_accounts_menu()
         
         menu.addSeparator()
@@ -184,6 +185,9 @@ class TrayIcon(QSystemTrayIcon):
     
     def _update_accounts_menu(self):
         """Actualiza el submenú de cuentas"""
+        if self.accounts_menu is None:
+            return
+            
         self.accounts_menu.clear()
         
         accounts = self.account_manager.get_all()
@@ -202,6 +206,9 @@ class TrayIcon(QSystemTrayIcon):
             account_menu = self.accounts_menu.addMenu(
                 f"{status_icon} {account.name}"
             )
+            
+            if account_menu is None:
+                continue
             
             # Opciones de la cuenta
             sync_action = QAction("🔄 Sincronizar", self)

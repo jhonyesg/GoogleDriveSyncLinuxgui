@@ -1911,8 +1911,8 @@ class MainWindow(QMainWindow):
         widget.settings_requested.connect(self._show_account_settings)
         
         # Insertar antes del stretch
-        self.accounts_layout.insertWidget(
-            self.accounts_layout.count() - 1, 
+        self.account_list_layout.insertWidget(
+            self.account_list_layout.count() - 1, 
             widget
         )
         
@@ -1980,7 +1980,7 @@ class MainWindow(QMainWindow):
                 self._select_account_by_id(dialog.new_account.id)
                 self._update_status_bar()
                 
-                self.statusBar().showMessage(f"Cuenta '{dialog.new_account.name}' añadida", 3000)
+                self.status_bar.showMessage(f"Cuenta '{dialog.new_account.name}' añadida", 3000)
     
     def _sync_account(self, account_id: str):
         """Sincroniza una cuenta específica"""
@@ -2020,7 +2020,7 @@ class MainWindow(QMainWindow):
             # Refrescar UI completa para reflejar posibles cambios de nombre
             self._load_accounts()
             self._select_account_by_id(account_id)
-            self.statusBar().showMessage("Configuración guardada", 3000)
+            self.status_bar.showMessage("Configuración guardada", 3000)
         elif result == 2:  # Eliminar
             self._delete_account(account_id)
     
@@ -2045,7 +2045,7 @@ class MainWindow(QMainWindow):
         self.content_area.setCurrentWidget(self.empty_view)
         
         self._update_status_bar()
-        self.statusBar().showMessage("Cuenta eliminada correctamente", 3000)
+        self.status_bar.showMessage("Cuenta eliminada correctamente", 3000)
 
     # --- Métodos que se ejecutan en el HILO DE UI (Slots) ---
 

@@ -1,0 +1,33 @@
+Source: lxdrive
+Maintainer: None <None>
+Section: python
+Priority: optional
+Build-Depends: dh-python, python3-setuptools, python3-all, debhelper (>= 9)
+Standards-Version: 3.9.6
+Homepage: https://github.com/jhonyesg/GoogleDriveSyncLinuxgui
+
+Package: python3-lxdrive
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends}
+Description: Cliente de sincronización multi-cuenta para Google Drive en
+ # 🚀 lX Drive v1.5.0.5
+ .
+ **Cliente de Sincronización Avanzado para Google Drive en Linux**
+ .
+ Una alternativa *opensource* potente y moderna a soluciones privativas como Insync. Diseñada para usuarios que necesitan rendimiento real, gestión de múltiples cuentas y control total sobre sus archivos.
+ .
+ ---
+ .
+ ## ✨ Características Principales
+ .
+ - 🔑 **Multi-Cuenta Real**: Gestiona ilimitadas cuentas de Google Drive simultáneamente.
+ - 🔄 **Sincronización Híbrida Inteligente**: 
+   - **Modo VFS (Streaming)**: Navega por petabytes de datos sin ocupar espacio en disco.
+   - **Modo Sync (Espejo)**: Ten tus archivos de trabajo siempre disponibles offline.
+ - ⚡ **Motor Concurrente**: Sincroniza múltiples carpetas a la vez sin bloqueos.
+ - 👁️ **Detección en Tiempo Real**: Gracias a **Watchdog**, los cambios locales (guardar, mover, borrar) se replican al instante.
+ - 🧠 **Smart Rename**: Detecta renombres y movimientos de archivos para evitar re-subidas innecesarias.
+ - 🛠️ **Recuperación Robusta**: Sistema de auto-reparación de bloqueos (`.lck`) para garantizar la continuidad.
+ .
+ ---
+

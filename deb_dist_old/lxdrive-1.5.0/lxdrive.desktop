@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=lX Drive
+Comment=Cliente de sincronización multi-cuenta para Google Drive
+Exec=lxdrive-gui
+Icon=lxdrive
+Terminal=false
+Categories=Utility;FileTransfer;
+StartupNotify=true

@@ -1229,6 +1229,9 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("lX Drive - Cloud Sync Manager")
         self.setMinimumSize(900, 600)
         
+        # v2.0: Try to apply Material theme if available
+        self._apply_material_theme()
+        
         # Estilo global
         self.setStyleSheet("""
             QMainWindow {
@@ -1313,7 +1316,11 @@ class MainWindow(QMainWindow):
                 border: 1px solid #555555;
                 padding: 4px;
             }
+        }
         """)
+        
+        # v2.0: Apply Material theme if available
+        self._apply_material_theme()
         
         # Widget central
         central_widget = QWidget()
@@ -1611,6 +1618,18 @@ class MainWindow(QMainWindow):
             on_error=self._on_sync_error,
             on_activity=self._handle_file_activity
         )
+    
+    def _apply_material_theme(self):
+        """Aplica Qt Material theme si está disponible"""
+        try:
+            import qt_material
+            # Apply dark blue theme
+            qt_material.apply_stylesheet(self, 'dark_blue.xml')
+            logger.debug("Applied qt-material theme")
+        except ImportError:
+            logger.debug("qt-material not available, using custom stylesheet")
+        except Exception as e:
+            logger.warning(f"Failed to apply material theme: {e}")
 
     def _on_sync_start(self, account_id: str):
         """Callback para inicio de sync - emite señal al bridge"""
@@ -2205,7 +2224,30 @@ class MainWindow(QMainWindow):
     
     def closeEvent(self, event):
         """Maneja el cierre de la ventana"""
-        # Crear diálogo de cierre personalizado con estilos
+        # v2.0: Verificar configuración para comportamiento al cerrar
+        minimize_to_tray = True  # Default para v2.0
+        
+        # Si hay config disponible, usar configuración del usuario
+        if hasattr(self, '_config') and self._config:
+            minimize_to_tray = self._config.get("minimize_to_tray", True)
+        
+        if minimize_to_tray:
+            # Minimizar a bandeja directamente (sin preguntar)
+            self.hide()
+            self.showMinimized()
+            self.setWindowState(self.windowState() | self.WindowState.WindowMinimized)
+            
+            # Notificación discreta en bandeja
+            if hasattr(self, 'tray_icon') and self.tray_icon:
+                self.tray_icon.show_notification(
+                    "lX Drive",
+                    "La aplicación sigue activa en la bandeja del sistema"
+                )
+            
+            event.ignore()
+            return
+        
+        # Comportamiento original: preguntar al usuario
         msg = QMessageBox(self)
         msg.setWindowTitle("Cerrar lX Drive")
         msg.setText("¿Qué deseas hacer?")

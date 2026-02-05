@@ -17,6 +17,16 @@ except ImportError:
 from .account_manager import Account, AccountManager, SyncStatus, SyncDirection
 from .rclone_wrapper import RcloneWrapper
 
+# NEW: v2.0 modules for file_id-based sync
+try:
+    from .metadata_store import MetadataStore, create_metadata_store, FileRecord, ChangeEvent
+    from .drive_api_client import DriveAPIClient, create_drive_client
+    from .sync_engine import SyncEngine, create_sync_engine, SyncDirection as SyncEngineDirection
+    V2_MODULES_AVAILABLE = True
+except ImportError as e:
+    V2_MODULES_AVAILABLE = False
+    logger.warning(f"v2.0 modules not available: {e}")
+
 
 class ChangeHandler(FileSystemEventHandler):
     """
@@ -276,12 +286,14 @@ class SyncManager:
     - Cola de tareas de sincronización
     - Callbacks para reportar progreso
     - Manejo de errores y reintentos
+    - v2.0: file_id-based sync con MetadataStore y DriveAPIClient
     """
     
     def __init__(
         self, 
         rclone: RcloneWrapper, 
-        account_manager: AccountManager
+        account_manager: AccountManager,
+        use_v2_engine: bool = True
     ):
         """
         Inicializa el gestor de sincronización.
@@ -289,9 +301,16 @@ class SyncManager:
         Args:
             rclone: Wrapper de rclone
             account_manager: Gestor de cuentas
+            use_v2_engine: Si True, usa el nuevo engine basado en file_id
         """
         self.rclone = rclone
         self.account_manager = account_manager
+        self.use_v2_engine = use_v2_engine and V2_MODULES_AVAILABLE
+        
+        # v2.0 components (initialized lazily)
+        self._metadata: Optional[MetadataStore] = None
+        self._drive_client: Optional[DriveAPIClient] = None
+        self._sync_engine: Optional[SyncEngine] = None
         
         # Estado interno
         self._running = False
@@ -303,7 +322,6 @@ class SyncManager:
         # Historial de listados para detectar renombres manualmente si rclone falla
         self._last_listings: Dict[str, Dict[str, Any]] = {}  # {pair_id: {file_name: {size, time}}}
         
-        
         # Callbacks
         self._on_sync_start: Optional[Callable[[str], None]] = None
         self._on_sync_complete: Optional[Callable[[SyncTask], None]] = None
@@ -311,13 +329,49 @@ class SyncManager:
         self._on_progress: Optional[Callable[[str, float], None]] = None
         self._on_file_activity: Optional[Callable[[str, str, str, str], None]] = None  # (acc_id, name, action, path)
         
-        
         # Callbacks
         self._last_sync_times: Dict[str, datetime] = {}
         
         # Watchdog
         self._observer = Observer() if WATCHDOG_AVAILABLE else None
         self._watchers: Dict[str, Any] = {} # Map de path -> watcher
+        
+        logger.info(f"SyncManager initialized (v2 engine: {self.use_v2_engine})")
+    
+    async def _init_v2_engine(self):
+        """Initialize v2.0 engine components"""
+        if not self.use_v2_engine or self._metadata is not None:
+            return
+        
+        try:
+            # Create metadata store
+            self._metadata = await create_metadata_store()
+            
+            # Create drive client using rclone credentials
+            credentials = self._get_rclone_credentials()
+            self._drive_client = create_drive_client(credentials, self.rclone)
+            
+            # Create sync engine
+            config = {
+                "max_cache_gb": 10,
+                "conflict_resolution": "timestamp",
+                "sync_direction": "bidirectional"
+            }
+            self._sync_engine = await create_sync_engine(
+                self.rclone, self._metadata, self._drive_client, config
+            )
+            
+            logger.info("v2.0 engine initialized successfully")
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize v2.0 engine: {e}")
+            self.use_v2_engine = False
+    
+    def _get_rclone_credentials(self) -> Dict[str, Any]:
+        """Extract OAuth credentials from rclone config"""
+        # This would parse rclone's token config
+        # For now, return empty dict - the DriveAPIClient will handle auth
+        return {}
 
     def set_callbacks(
         self,
@@ -341,6 +395,12 @@ class SyncManager:
             return
         
         self._running = True
+        
+        # Initialize v2.0 engine if enabled
+        if self.use_v2_engine:
+            import asyncio
+            asyncio.run(self._init_v2_engine())
+        
         self._sync_thread = threading.Thread(target=self._sync_loop, daemon=True)
         self._sync_thread.start()
         
@@ -363,6 +423,11 @@ class SyncManager:
         if self._sync_thread:
             self._sync_thread.join(timeout=5)
             
+        # Stop v2.0 engine
+        if self._sync_engine:
+            import asyncio
+            asyncio.run(self._sync_engine.stop())
+        
         if self._observer:
             try:
                 self._observer.stop()
@@ -370,6 +435,30 @@ class SyncManager:
             except: pass
             
         logger.info("Servicio de sincronización detenido")
+    
+    async def _sync_with_v2_engine(self, account: Account, pair) -> Tuple[bool, str, int]:
+        """
+        Sincronizar usando el nuevo engine v2.0 (file_id-based)
+        
+        Returns:
+            (success, message, file_count)
+        """
+        if not self._sync_engine:
+            return False, "v2 engine not initialized", 0
+        
+        try:
+            result = await self._sync_engine.sync_pair(
+                account_id=account.id,
+                pair_id=pair.id,
+                local_base=Path(pair.local_path),
+                remote_base=f"{account.remote_name}:{pair.remote_path}"
+            )
+            
+            return result.success, result.errors[0] if result.errors else "OK", result.files_synced
+            
+        except Exception as e:
+            logger.error(f"v2 sync error: {e}")
+            return False, str(e), 0
     
     def _start_watching(self, account: Account):
         """Inicia la vigilancia de carpetas locales"""
@@ -646,9 +735,29 @@ class SyncManager:
                 self._active_syncs.discard(lock_id)
 
     def _sync_single_pair(self, account, pair) -> Tuple[bool, str, int]:
-        """Lógica central para sincronizar un par (SyncPair)"""
+        """Lógica central para sincronizar un par (SyncPair)
+        
+        USA v2.0 engine si está disponible (file_id-based, sin duplicados)
+        CAE BACKUP a v1.0 (bisync) si v2 no está disponible
+        """
         logger.info(f"Sincronizando par: {pair.local_path} -> {pair.remote_path}")
-
+        
+        # --- V2.0 ENGINE: Usar sync basado en file_id ---
+        if self.use_v2_engine and self._sync_engine:
+            try:
+                import asyncio
+                success, msg, count = asyncio.run(
+                    self._sync_with_v2_engine(account, pair)
+                )
+                if success:
+                    logger.info(f"v2 sync completado: {count} archivos")
+                    return success, msg, count
+                else:
+                    logger.warning(f"v2 sync falló, cayendo a v1: {msg}")
+            except Exception as e:
+                logger.error(f"v2 engine error, cayendo a v1: {e}")
+        
+        # --- V1.0 ENGINE: Fallback a bisync ---
         # Buffer heurístico para renombres
         recent_events = []
 

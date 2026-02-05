@@ -4,19 +4,27 @@ ConflictDialog - Diálogo para resolver conflictos de sincronización
 
 Permite al usuario revisar y resolver conflictos cuando un archivo
 ha sido modificado en ambos lados.
+
+v2.0 Mejoras:
+- Diálogo simplificado para conflictos individuales
+- Comparación lado a lado
+- Resolución por timestamp (default)
+- Opciones: mantener local, remoto, ambos
+
+Author: lX Drive Team
+Version: 2.0.0
 """
 
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QTableWidget, QTableWidgetItem, QHeaderView, QGroupBox,
-    QRadioButton, QButtonGroup, QTextEdit, QComboBox, QCheckBox
+    QRadioButton, QButtonGroup, QCheckBox, QFrame, QMessageBox,
+    QSpacerItem, QSizePolicy
 )
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QFont, QColor
-from typing import List, Optional
+from PyQt6.QtCore import Qt, QSize, pyqtSignal
+from PyQt6.QtGui import QIcon, QFont, QPixmap
+from pathlib import Path
 from datetime import datetime
-
-from ..core.conflict_resolver import ConflictFile, ConflictStrategy
+from loguru import logger
 
 
 class ConflictDialog(QDialog):

@@ -5,6 +5,9 @@ PyQt6-Qt6>=6.5.0
 # System tray and notifications
 pyqttoast>=1.0.0
 
+# UI Modernization (Material Theme)
+qt-material>=2.8
+
 # Configuration management
 pyyaml>=6.0
 
@@ -14,9 +17,18 @@ psutil>=5.9.0
 # Logging
 loguru>=0.7.0
 
+# File system monitoring
+watchdog>=3.0.0
+
 # For OAuth (Google Drive authentication)
 google-auth>=2.22.0
 google-auth-oauthlib>=1.0.0
+
+# Google Drive API v3 (for file_id tracking)
+google-api-python-client>=2.100.0
+
+# Async database operations
+aiosqlite>=0.19.0
 
 # Utilities
 python-dateutil>=2.8.2

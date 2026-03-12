@@ -1,0 +1,19 @@
+Package: lxdrive
+Version: 1.0.0
+Section: utils
+Priority: optional
+Architecture: all
+Depends: python3 (>= 3.10), python3-gi, gir1.2-gtk-3.0, rclone, python3-xdg, gir1.2-ayatanaappindicator3-0.1 | gir1.2-appindicator3-0.1
+Maintainer: lX_Drive Team <info@lxdrive.org>
+Description: Cloud sync manager for Linux Mint
+ lX_Drive is a desktop application for Linux Mint that manages
+ bidirectional synchronization between local folders and multiple
+ cloud providers using rclone as backend.
+ .
+ Features:
+  - Support for Google Drive, OneDrive, Dropbox and more
+  - Mount cloud storage as local filesystem using VFS
+  - Bidirectional synchronization with conflict resolution
+  - Automatic startup on system boot
+  - Easy to use GTK3 interface
+  - Tray icon for background operation

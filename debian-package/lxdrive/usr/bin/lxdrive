@@ -1,0 +1,3 @@
+#!/bin/bash
+cd /usr/share/lxdrive
+exec python3 -m lxdrive.main "$@"

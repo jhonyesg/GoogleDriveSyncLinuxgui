@@ -1,0 +1,16 @@
+[Unit]
+Description=lX_Drive Bisync for %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+ExecStart=/usr/bin/rclone bisync %h/Cloud/%i %i: \
+    --watch \
+    --log-level INFO \
+    --log-file %h/.config/lxdrive/logs/sync-%i.log
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=default.target

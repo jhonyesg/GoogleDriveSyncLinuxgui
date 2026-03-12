@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=lX_Drive
+Comment=Cloud sync manager for Linux Mint
+Exec=lxdrive
+Icon=lxdrive
+Terminal=false
+Categories=Network;FileTransfer;GTK;
+StartupNotify=true
+Keywords=cloud;sync;drive;rclone;

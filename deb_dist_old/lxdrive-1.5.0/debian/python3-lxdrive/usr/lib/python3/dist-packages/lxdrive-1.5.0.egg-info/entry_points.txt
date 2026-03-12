@@ -1,6 +1,0 @@
-[console_scripts]
-lx-drive = lxdrive.app:main
-lxdrive = lxdrive.app:main
-
-[gui_scripts]
-lxdrive-gui = lxdrive.app:main

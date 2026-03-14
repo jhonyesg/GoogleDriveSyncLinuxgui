@@ -123,6 +123,7 @@ class SyncManager:
             "bisync",
             str(local_path),
             remote_full,
+            "--track-renames",
             "--drive-import-formats", "docx,xlsx,pptx,doc,xls,ppt,odt,ods,odp",
             "-vvv",
         ]

@@ -1,19 +1,92 @@
 import os
 import shutil
 import subprocess
+import threading
+import time
+import hashlib
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict
 from datetime import datetime
 import signal
 
 from lxdrive.config import LOG_DIR, TaskStatus
 from lxdrive.backend.models import SyncTask, TaskManager
+from lxdrive.utils.logger import get_logger
+
+
+class FileWatcher:
+    def __init__(self, path: Path, poll_interval: int = 30):
+        self.path = Path(path).expanduser()
+        self.poll_interval = poll_interval
+        self._file_hashes: Dict[str, str] = {}
+        self._running = False
+        self._thread: Optional[threading.Thread] = None
+        self._callbacks: list = []
+    
+    def _compute_file_hash(self, file_path: Path) -> str:
+        try:
+            with open(file_path, 'rb') as f:
+                return hashlib.md5(f.read()).hexdigest()
+        except Exception:
+            return ""
+    
+    def _scan_directory(self) -> Dict[str, str]:
+        hashes = {}
+        if self.path.exists():
+            for item in self.path.rglob('*'):
+                if item.is_file():
+                    try:
+                        rel_path = item.relative_to(self.path)
+                        hashes[str(rel_path)] = self._compute_file_hash(item)
+                    except Exception:
+                        pass
+        return hashes
+    
+    def _check_for_changes(self) -> bool:
+        current_hashes = self._scan_directory()
+        
+        if current_hashes != self._file_hashes:
+            self._file_hashes = current_hashes
+            return True
+        return False
+    
+    def _watch_loop(self):
+        self._file_hashes = self._scan_directory()
+        
+        while self._running:
+            time.sleep(self.poll_interval)
+            if not self._running:
+                break
+            
+            if self._check_for_changes():
+                for callback in self._callbacks:
+                    try:
+                        callback(self.path)
+                    except Exception as e:
+                        pass
+    
+    def add_callback(self, callback):
+        self._callbacks.append(callback)
+    
+    def start(self):
+        if self._running:
+            return
+        self._running = True
+        self._thread = threading.Thread(target=self._watch_loop, daemon=True)
+        self._thread.start()
+    
+    def stop(self):
+        self._running = False
+        if self._thread:
+            self._thread.join(timeout=5)
 
 
 class SyncManager:
     def __init__(self):
         self.rclone_path = shutil.which("rclone")
         self.active_syncs: dict = {}
+        self.watchers: Dict[str, FileWatcher] = {}
+        self.logger = get_logger()
     
     def is_available(self) -> bool:
         return self.rclone_path is not None
@@ -125,7 +198,7 @@ class SyncManager:
             remote_full,
             "--track-renames",
             "--drive-import-formats", "docx,xlsx,pptx,doc,xls,ppt,odt,ods,odp",
-            "-vvv",
+            "--log-level", "INFO",
         ]
         
         if needs_resync:
@@ -142,11 +215,24 @@ class SyncManager:
         cmd.extend(["--log-file", str(log_file)])
         
         task.status = TaskStatus.RUNNING
+        task_manager = TaskManager()
+        task_manager.update_task(task)
+        self.active_syncs[task.id] = True
         
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+            self.logger.debug(f"Iniciando sincronización: {' '.join(cmd)}")
             
-            if result.returncode == 0:
+            with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) as proc:
+                try:
+                    stdout, stderr = proc.communicate(timeout=120)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    stdout, stderr = proc.communicate()
+                    return False, "Timeout: sincronización tardó más de 2 minutos"
+            
+            result = proc.returncode
+            
+            if result == 0:
                 task.last_sync = datetime.now()
                 task.last_sync_result = "Éxito"
                 task.status = TaskStatus.IDLE
@@ -158,14 +244,15 @@ class SyncManager:
                 if len(task.sync_history) > 10:
                     task.sync_history = task.sync_history[-10:]
                 
-                task_manager = TaskManager()
                 task_manager.update_task(task)
+                self.logger.info(f"Sincronización exitosa para {task.name}")
                 
                 return True, "Sincronización completada exitosamente"
             
             task.status = TaskStatus.ERROR
+            self.logger.error(f"Sincronización fallida para {task.name}: {result}")
             
-            error_msg = result.stderr.strip() if result.stderr else result.stdout.strip()
+            error_msg = stderr.strip() if stderr else stdout.strip()
             
             if not error_msg and log_file.exists():
                 try:
@@ -187,12 +274,19 @@ class SyncManager:
             
             if "quota" in error_lower or "rate limit" in error_lower or "429" in error_msg:
                 error_msg = "Límite de Google Drive alcanzado. Espera unos minutos e intenta de nuevo."
+            elif "must run --resync" in error_lower:
+                if not _retrying:
+                    return self.run_sync(task, watch, dry_run, force_resync=True, _retrying=True)
+                else:
+                    error_msg = "Error de sincronización. Intenta de nuevo."
             elif "directory not found" in error_lower:
                 error_msg = "Directorio no encontrado"
-            elif "check-access" in error_lower:
-                error_msg = "Error de acceso"
             elif "not found" in error_lower:
                 error_msg = "Carpeta no encontrada"
+            elif ".lck" in error_lower and "no such file" in error_lower:
+                error_msg = "Lock de sincronización anterior. Reintentando..."
+                if not _retrying:
+                    return self.run_sync(task, watch, dry_run, force_resync=True, _retrying=True)
             elif "prior lock" in error_lower:
                 cache_dir = Path.home() / ".cache" / "rclone" / "bisync"
                 if cache_dir.exists():
@@ -214,11 +308,6 @@ class SyncManager:
                     return self.run_sync(task, watch, dry_run, force_resync=True, _retrying=True)
                 else:
                     error_msg = "Error con documentos de Google Drive. Intenta de nuevo."
-            elif "must run --resync" in error_lower:
-                if not _retrying:
-                    return self.run_sync(task, watch, dry_run, force_resync=True, _retrying=True)
-                else:
-                    error_msg = "Error de sincronización. Intenta de nuevo."
             elif "failed to bisync" in error_lower:
                 error_msg = f"Error de sincronización: {error_msg}"
             
@@ -291,3 +380,48 @@ class SyncManager:
                 except:
                     pass
         self.active_syncs.clear()
+        self.stop_all_watchers()
+    
+    def start_watcher(self, task: SyncTask, poll_interval: int = 30) -> bool:
+        if task.id in self.watchers:
+            return False
+        
+        local_path = Path(task.local_path.strip()).expanduser()
+        watcher = FileWatcher(local_path, poll_interval=poll_interval)
+        
+        def on_change(path):
+            self._trigger_sync(task)
+        
+        watcher.add_callback(on_change)
+        watcher.start()
+        self.watchers[task.id] = watcher
+        return True
+    
+    def stop_watcher(self, task_id: str) -> bool:
+        if task_id not in self.watchers:
+            return False
+        
+        self.watchers[task_id].stop()
+        del self.watchers[task_id]
+        return True
+    
+    def stop_all_watchers(self):
+        for task_id in list(self.watchers.keys()):
+            self.watchers[task_id].stop()
+        self.watchers.clear()
+    
+    def _trigger_sync(self, task: SyncTask):
+        if task.id in self.active_syncs:
+            return
+        
+        task.status = TaskStatus.SYNCING
+        threading.Thread(target=self._run_sync_background, args=(task,), daemon=True).start()
+    
+    def _run_sync_background(self, task: SyncTask):
+        task_manager = TaskManager()
+        self.active_syncs[task.id] = True
+        try:
+            success, msg = self.run_sync(task, watch=False)
+        finally:
+            if task.id in self.active_syncs:
+                del self.active_syncs[task.id]

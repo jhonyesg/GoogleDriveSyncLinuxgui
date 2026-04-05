@@ -240,7 +240,23 @@ class TaskRow(Gtk.ListBoxRow):
                 TaskStatus.ERROR: ("Error", "dialog-error-symbolic"),
                 TaskStatus.SYNCING: ("Sincronizando", "emblem-synchronizing-symbolic"),
             }
-            status_text, icon_name = status_map.get(self.task.status, ("Desconocido", "dialog-question-symbolic"))
+            
+            if self.task.autostart:
+                svc_status = self.systemd_manager.get_service_status(self.task.id, "sync")
+                if svc_status == "active":
+                    status_text = "Activo (Segundo Plano)"
+                    icon_name = "emblem-synchronizing-symbolic"
+                elif svc_status == "failed" or svc_status == "deactivating":
+                    status_text = "Error (Servicio)"
+                    icon_name = "dialog-error-symbolic"
+                elif svc_status == "activating":
+                    status_text = "Sincronizando..."
+                    icon_name = "emblem-synchronizing-symbolic"
+                else:
+                    status_text, icon_name = status_map.get(self.task.status, ("Desconocido", "dialog-question-symbolic"))
+            else:
+                status_text, icon_name = status_map.get(self.task.status, ("Desconocido", "dialog-question-symbolic"))
+                
             self.status_label.set_text(status_text)
             self.status_icon.set_from_icon_name(icon_name, Gtk.IconSize.MENU)
         
@@ -278,11 +294,13 @@ class TaskRow(Gtk.ListBoxRow):
                         Path(self.task.local_path)
                     )
                     self.systemd_manager.enable_service(self.task.id, "sync")
+                    self.sync_manager.start_watcher(self.task, poll_interval=30)
             else:
                 if self.task.task_type == TaskType.MOUNT:
                     self.systemd_manager.disable_service(self.task.remote_name, "mount")
                 else:
                     self.systemd_manager.disable_service(self.task.id, "sync")
+                    self.sync_manager.stop_watcher(self.task.id)
             
             task_manager.update_task(self.task)
         except Exception as e:
@@ -647,6 +665,8 @@ class TasksPanel(Gtk.Box):
         dialog.destroy()
         
         if response == Gtk.ResponseType.YES:
+            if self.selected_task.task_type == TaskType.BISYNC:
+                self.sync_manager.stop_watcher(self.selected_task.id)
             self.task_manager.remove_task(self.selected_task.id)
             self.selected_task = None
             self.remove_btn.set_sensitive(False)

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-VERSION="1.0.0"
+VERSION="1.0.7"
 PACKAGE_NAME="lxdrive"
 BUILD_DIR="debian-package/${PACKAGE_NAME}"
 PYTHON_VERSION="3.12"
@@ -89,9 +89,7 @@ chmod 755 ${BUILD_DIR}/DEBIAN/prerm
 INSTALLED_SIZE=$(du -sk ${BUILD_DIR} | cut -f1)
 echo "$INSTALLED_SIZE" > ${BUILD_DIR}/DEBIAN/installed-size 2>/dev/null || true
 
-dpkg-deb --build --root-owner-group ${BUILD_DIR}
-
-mv debian-package/${PACKAGE_NAME}_${VERSION}_all.deb . 2>/dev/null || true
+dpkg-deb --build --root-owner-group ${BUILD_DIR} "${PACKAGE_NAME}_${VERSION}_all.deb"
 
 echo ""
 echo "Paquete creado: ${PACKAGE_NAME}_${VERSION}_all.deb"

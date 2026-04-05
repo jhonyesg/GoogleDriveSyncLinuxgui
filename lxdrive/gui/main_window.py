@@ -186,8 +186,12 @@ class MainWindow(Gtk.ApplicationWindow):
                         self.logger.info(f"Montado: {task.name or task.remote_name}")
                     else:
                         self.logger.error(f"Error al montar {task.name or task.remote_name}: {msg}")
-                else:
-                    self.logger.info(f"Sincronizando {task.name or task.remote_name}...")
+                elif task.task_type.value == "bisync":
+                    self.logger.info(f"Iniciando monitoreo de {task.name or task.remote_name}...")
+                    
+                    self.sync_manager.start_watcher(task, poll_interval=30)
+                    
+                    self.logger.info(f"Sincronización inicial para {task.name or task.remote_name}...")
                     import threading
                     thread = threading.Thread(target=self._run_sync_task, args=(task,), daemon=True)
                     thread.start()
@@ -210,6 +214,7 @@ class MainWindow(Gtk.ApplicationWindow):
     
     def _on_close_request(self, widget, event):
         self.config.save()
+        self.sync_manager.stop_all_watchers()
         self.sync_manager.cleanup()
         self.hide()
         return True
@@ -277,19 +282,20 @@ class MainWindow(Gtk.ApplicationWindow):
         self.indicator.connect("scroll-event", self._on_tray_scroll)
     
     def _on_show_window(self, menu_item):
-        self.show()
+        self.show_all()
         self.present()
     
     def _on_minimize_to_tray(self, menu_item):
         self.hide()
     
     def _on_tray_settings(self, menu_item):
-        self.show()
+        self.show_all()
         self.present()
         self.show_settings()
     
     def _on_tray_quit(self, menu_item):
         self.config.save()
+        self.sync_manager.stop_all_watchers()
         self.sync_manager.cleanup()
         self.app.quit()
     
@@ -386,7 +392,7 @@ class LXDriveApp(Gtk.Application):
     
     def _on_show(self, action, param):
         if self.main_window:
-            self.main_window.show()
+            self.main_window.show_all()
             self.main_window.present()
     
     def quit_app(self):

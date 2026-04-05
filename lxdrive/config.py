@@ -4,7 +4,7 @@ from enum import Enum
 
 APP_NAME = "lX_Drive"
 APP_ID = "com.lxdrive.app"
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 AUTHOR = "lX_Drive Team"
 
 HOME = Path.home()

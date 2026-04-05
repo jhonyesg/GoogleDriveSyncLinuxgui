@@ -73,6 +73,7 @@ class MountManager:
             "buffer-size": "64M",
             "dir-cache-time": "72h",
             "poll-interval": "15s",
+            "allow-non-empty": "",
         }
         
         if options:
@@ -81,7 +82,10 @@ class MountManager:
         cmd = [self.rclone_path, "mount", f"{remote_name}:", str(local_path)]
         
         for key, value in default_options.items():
-            cmd.extend([f"--{key}", str(value)])
+            if value == "":
+                cmd.append(f"--{key}")
+            else:
+                cmd.extend([f"--{key}", str(value)])
         
         if daemon:
             cmd.append("--daemon")

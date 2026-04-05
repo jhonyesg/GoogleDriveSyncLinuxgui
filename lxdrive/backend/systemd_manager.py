@@ -15,7 +15,7 @@ Wants=network-online.target
 
 [Service]
 Type=notify
-ExecStart={rclone_path} mount {remote_name}: {mount_path} \
+ExecStart="{rclone_path}" mount "{remote_name}:" "{mount_path}" \
     --vfs-cache-mode full \
     --vfs-cache-max-age 24h \
     --vfs-cache-max-size 10G \
@@ -23,7 +23,7 @@ ExecStart={rclone_path} mount {remote_name}: {mount_path} \
     --dir-cache-time 72h \
     --poll-interval 15s \
     --log-level INFO \
-    --log-file {log_path}
+    --log-file "{log_path}"
 Restart=on-failure
 RestartSec=5
 
@@ -38,12 +38,11 @@ Wants=network-online.target
 
 [Service]
 Type=exec
-ExecStart={rclone_path} bisync {local_path} {remote_name}:{remote_path} \
-    --resync-period 3m \
+ExecStart="{rclone_path}" bisync "{local_path}" "{remote_name}:{remote_path}" \
     --track-renames \
     --drive-import-formats docx,xlsx,pptx,doc,xls,ppt,odt,ods,odp \
     --log-level INFO \
-    --log-file {log_path}
+    --log-file "{log_path}"
 Restart=on-failure
 RestartSec=30
 

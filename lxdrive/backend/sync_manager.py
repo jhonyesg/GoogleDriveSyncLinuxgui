@@ -12,6 +12,7 @@ import signal
 from lxdrive.config import LOG_DIR, TaskStatus
 from lxdrive.backend.models import SyncTask, TaskManager
 from lxdrive.utils.logger import get_logger
+import logging
 
 
 class FileWatcher:
@@ -25,8 +26,11 @@ class FileWatcher:
     
     def _compute_file_hash(self, file_path: Path) -> str:
         try:
+            h = hashlib.sha256()
             with open(file_path, 'rb') as f:
-                return hashlib.md5(f.read()).hexdigest()
+                for chunk in iter(lambda: f.read(8192), b''):
+                    h.update(chunk)
+            return h.hexdigest()
         except Exception:
             return ""
     
@@ -63,7 +67,7 @@ class FileWatcher:
                     try:
                         callback(self.path)
                     except Exception as e:
-                        pass
+                        logging.warning(f"Error en callback de FileWatcher: {e}")
     
     def add_callback(self, callback):
         self._callbacks.append(callback)
@@ -272,7 +276,7 @@ class SyncManager:
             
             error_lower = error_msg.lower()
             
-            if "quota" in error_lower or "rate limit" in error_lower or "429" in error_msg:
+            if "quota" in error_lower or "rate limit" in error_lower or "429" in error_lower:
                 error_msg = "Límite de Google Drive alcanzado. Espera unos minutos e intenta de nuevo."
             elif "must run --resync" in error_lower:
                 if not _retrying:
